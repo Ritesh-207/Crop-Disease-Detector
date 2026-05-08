@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Disease Detector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f0;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #2d6a4f;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .header h1 { font-size: 2rem; margin-bottom: 8px; }
+        .header p  { font-size: 1rem; opacity: 0.9; }
+
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d6a4f;
+            font-size: 1rem;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #333;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus { outline: none; border-color: #2d6a4f; }
+
+        .upload-area {
+            border: 2px dashed #2d6a4f;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            background: #f9fdf9;
+            transition: background 0.2s;
+        }
+
+        .upload-area:hover { background: #e8f5e9; }
+
+        .upload-area p {
+            font-size: 1rem;
+            color: #2d6a4f;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .upload-area small { color: #888; }
+
+        #previewBox { margin-bottom: 20px; text-align: center; }
+
+        #previewBox label {
+            display: block;
+            font-weight: 600;
+            color: #2d6a4f;
+            margin-bottom: 10px;
+        }
+
+        #previewImg {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            object-fit: cover;
+        }
+
+        #predictBtn {
+            width: 100%;
+            padding: 14px;
+            background: #2d6a4f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        #predictBtn:hover { background: #1b4332; }
+        #predictBtn:disabled { background: #aaa; cursor: not-allowed; }
+
+        #loading { text-align: center; padding: 20px; color: #2d6a4f; }
+
+        .spinner {
+            width: 45px;
+            height: 45px;
+            border: 5px solid #ddd;
+            border-top-color: #2d6a4f;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Result Box ───────────────────────────────── */
+        #resultBox { border-top: 2px solid #e8f5e9; padding-top: 20px; }
+        #resultBox h2 { color: #2d6a4f; margin-bottom: 16px; font-size: 1.2rem; }
+
+        .result-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .result-icon { font-size: 1.6rem; min-width: 36px; }
+
+        .result-item strong {
+            display: block;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .result-item p { font-size: 0.95rem; line-height: 1.5; }
+
+        .disease    { background: #fff3f3; border-left: 4px solid #e74c3c; }
+        .treatment  { background: #f0f9ff; border-left: 4px solid #3498db; }
+        .prevention { background: #f0fff4; border-left: 4px solid #2ecc71; }
+
+        .disease    strong { color: #e74c3c; }
+        .treatment  strong { color: #3498db; }
+        .prevention strong { color: #2ecc71; }
+
+        /* ── Weather Box ──────────────────────────────── */
+        #weatherBox {
+            border-top: 2px solid #e8f5e9;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        #weatherBox h2 {
+            color: #2d6a4f;
+            margin-bottom: 16px;
+            font-size: 1.2rem;
+        }
+
+        .weather-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f0f9ff;
+            border-left: 4px solid #3498db;
+        }
+
+        .weather-icon { font-size: 1.4rem; min-width: 32px; }
+
+        .weather-item strong {
+            display: block;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #3498db;
+            margin-bottom: 4px;
+        }
+
+        .weather-item p { font-size: 0.95rem; line-height: 1.5; }
+
+        .weather-tip {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            background: #fff8e1;
+            border-left: 4px solid #f39c12;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .weather-tip span { font-size: 1.4rem; min-width: 32px; }
+
+        .weather-tip p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #7d5a00;
+            font-weight: 500;
+        }
+
+        /* ── Reset Button ─────────────────────────────── */
+        .reset-btn {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            color: #2d6a4f;
+            border: 2px solid #2d6a4f;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .reset-btn:hover { background: #2d6a4f; color: white; }
+
+        /* ── Error Box ────────────────────────────────── */
+        #errorBox {
+            background: #fff3f3;
+            border: 2px solid #e74c3c;
+            border-radius: 8px;
+            padding: 14px;
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* ── Footer ───────────────────────────────────── */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🌱 Plant Disease Detector</h1>
+        <p>Upload a plant image to detect disease and get treatment advice</p>
+    </div>
+
+    <div class="container">
+
+        <!-- Crop Selection -->
+        <div class="form-group">
+            <label>Select Crop</label>
+            <select id="cropSelect">
+                <option value="">-- Choose a crop --</option>
+                <option value="potato">Potato</option>
+                <option value="tomato">Tomato</option>
+            </select>
+        </div>
+
+        <!-- Image Upload -->
+        <div class="form-group">
+            <label>Upload Plant Image</label>
+            <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+                <p>Click here to upload image</p>
+                <small>Supports JPG, PNG</small>
+            </div>
+            <input type="file" id="imageInput" accept="image/*" style="display:none">
+        </div>
+
+        <!-- Image Preview -->
+        <div id="previewBox" style="display:none">
+            <label>Image Preview</label>
+            <img id="previewImg" src="" alt="Preview">
+        </div>
+
+        <!-- Predict Button -->
+        <button id="predictBtn" onclick="predict()">🔍 Detect Disease</button>
+
+        <!-- Loading Spinner -->
+        <div id="loading" style="display:none">
+            <div class="spinner"></div>
+            <p>Analyzing image...</p>
+        </div>
+
+        <!-- Detection Results -->
+        <div id="resultBox" style="display:none">
+            <h2>📊 Detection Results</h2>
+
+            <div class="result-item disease">
+                <span class="result-icon">🦠</span>
+                <div>
+                    <strong>Disease Detected</strong>
+                    <p id="diseaseName"></p>
+                </div>
+            </div>
+
+            <div class="result-item treatment">
+                <span class="result-icon">💊</span>
+                <div>
+                    <strong>Treatment</strong>
+                    <p id="treatmentText"></p>
+                </div>
+            </div>
+
+            <div class="result-item prevention">
+                <span class="result-icon">🛡️</span>
+                <div>
+                    <strong>Prevention</strong>
+                    <p id="preventionText"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Impact -->
+        <div id="weatherBox" style="display:none">
+            <h2>🌤️ Weather Impact on Disease</h2>
+
+            <div class="weather-item">
+                <span class="weather-icon">🌡️</span>
+                <div>
+                    <strong>Temperature</strong>
+                    <p id="weatherTemp"></p>
+                </div>
+            </div>
+
+            <div class="weather-item">
+                <span class="weather-icon">💧</span>
+                <div>
+                    <strong>Humidity</strong>
+                    <p id="weatherHumidity"></p>
+                </div>
+            </div>
+
+            <div class="weather-item">
+                <span class="weather-icon">🌧️</span>
+                <div>
+                    <strong>Rainfall</strong>
+                    <p id="weatherRain"></p>
+                </div>
+            </div>
+
+            <div class="weather-item">
+                <span class="weather-icon">☀️</span>
+                <div>
+                    <strong>Dry Weather</strong>
+                    <p id="weatherDry"></p>
+                </div>
+            </div>
+
+            <div class="weather-tip">
+                <span>⚠️</span>
+                <p id="weatherTip"></p>
+            </div>
+
+            <!-- Reset Button here so it's always at the bottom -->
+            <button class="reset-btn" onclick="resetForm()">🔄 Try Another Image</button>
+        </div>
+
+        <!-- Error Box -->
+        <div id="errorBox" style="display:none">
+            <p id="errorText"></p>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p>Plant Disease Detector &copy; 2026 | Powered by AI</p>
+    </div>
+
+    <script>
+        // Show image preview
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('previewBox').style.display = 'block';
+                document.querySelector('.upload-area p').textContent = '✅ ' + file.name;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Predict function
+        async function predict() {
+            const crop  = document.getElementById('cropSelect').value;
+            const image = document.getElementById('imageInput').files[0];
+
+            if (!crop)  { showError('⚠️ Please select a crop first'); return; }
+            if (!image) { showError('⚠️ Please upload an image first'); return; }
+
+            document.getElementById('resultBox').style.display  = 'none';
+            document.getElementById('weatherBox').style.display = 'none';
+            document.getElementById('errorBox').style.display   = 'none';
+            document.getElementById('loading').style.display    = 'block';
+            document.getElementById('predictBtn').disabled      = true;
+
+            const formData = new FormData();
+            formData.append('crop', crop);
+            formData.append('image', image);
+
+            try {
+                const response = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                document.getElementById('loading').style.display  = 'none';
+                document.getElementById('predictBtn').disabled    = false;
+
+                if (data.error) { showError('❌ ' + data.error); return; }
+
+                // Show disease results
+                document.getElementById('diseaseName').textContent    = data.disease;
+                document.getElementById('treatmentText').textContent  = data.treatment;
+                document.getElementById('preventionText').textContent = data.prevention;
+                document.getElementById('resultBox').style.display    = 'block';
+
+                // Show weather info
+                document.getElementById('weatherTemp').textContent     = data.weather.temperature;
+                document.getElementById('weatherHumidity').textContent = data.weather.humidity;
+                document.getElementById('weatherRain').textContent     = data.weather.rainfall;
+                document.getElementById('weatherDry').textContent      = data.weather.dry_weather;
+                document.getElementById('weatherTip').textContent      = data.weather.risk_tip;
+                document.getElementById('weatherBox').style.display    = 'block';
+
+                // Scroll to results
+                document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('predictBtn').disabled   = false;
+                showError('❌ Could not connect to server. Make sure Flask is running.');
+            }
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('errorText').textContent  = message;
+            document.getElementById('errorBox').style.display = 'block';
+            document.getElementById('loading').style.display  = 'none';
+            document.getElementById('predictBtn').disabled    = false;
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('cropSelect').value            = '';
+            document.getElementById('imageInput').value            = '';
+            document.getElementById('previewBox').style.display    = 'none';
+            document.getElementById('resultBox').style.display     = 'none';
+            document.getElementById('weatherBox').style.display    = 'none';
+            document.getElementById('errorBox').style.display      = 'none';
+            document.querySelector('.upload-area p').textContent   = 'Click here to upload image';
+        }
+    </script>
+
+</body>
+</html>
