@@ -12,3 +12,5 @@ dataset/
 
 # Windows
 Thumbs.db
+
+models/*.h5
