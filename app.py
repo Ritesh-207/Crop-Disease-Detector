@@ -3,8 +3,29 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import io
+import os
+import gdown
 
 app = Flask(__name__)
+
+# ─── Download Models from Google Drive ─────────────────
+def download_models():
+    os.makedirs("models", exist_ok=True)
+
+    potato_id = "1mkZ-OWKmTrh1IS1Y9zN2FsS9lLsgYLJ9"
+    tomato_id = "1fv8roQTDbrUB2XBY6QX49FA94Cwqurtf"
+
+    if not os.path.exists("models/potato_model.h5"):
+        print("Downloading potato model...")
+        gdown.download(f"https://drive.google.com/uc?id={potato_id}",
+                      "models/potato_model.h5", quiet=False)
+
+    if not os.path.exists("models/tomato_model.h5"):
+        print("Downloading tomato model...")
+        gdown.download(f"https://drive.google.com/uc?id={tomato_id}",
+                      "models/tomato_model.h5", quiet=False)
+
+download_models()
 
 # ─── Disease Info ──────────────────────────────────────
 DISEASE_INFO = {
@@ -78,6 +99,7 @@ DISEASE_INFO = {
         }
     }
 }
+
 # ─── Weather Risk Info ─────────────────────────────────
 WEATHER_RISK = {
     "potato": {
@@ -176,6 +198,7 @@ WEATHER_RISK = {
         }
     }
 }
+
 # ─── Class Labels ──────────────────────────────────────
 POTATO_CLASSES = ['Early_Blight', 'Healthy', 'Late_Blight']
 
@@ -192,11 +215,13 @@ tomato_model = None
 
 try:
     potato_model = tf.keras.models.load_model("models/potato_model.h5")
+    print("Potato model loaded!")
 except Exception as e:
     print(f"Potato model error: {e}")
 
 try:
     tomato_model = tf.keras.models.load_model("models/tomato_model.h5")
+    print("Tomato model loaded!")
 except Exception as e:
     print(f"Tomato model error: {e}")
 
@@ -256,8 +281,6 @@ def predict():
         return jsonify({"error": str(e)}), 500
 
 # ─── Run ───────────────────────────────────────────────
-
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
